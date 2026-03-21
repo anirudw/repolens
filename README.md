@@ -1,42 +1,28 @@
-# repolens
+# Repolens
 
-A CLI tool to visualize repository dependency graphs by parsing ASTs across multiple languages.
+![NPM Version](https://img.shields.io/npm/v/@anirudw/repolens?color=blue&style=for-the-badge)
+![NPM Downloads](https://img.shields.io/npm/dt/@anirudw/repolens?style=for-the-badge)
+![License](https://img.shields.io/npm/l/@anirudw/repolens?style=for-the-badge)
+
+**A cross-platform, multi-lingual repository intelligence CLI.**
+
+Repolens analyzes your codebase using native C++ Abstract Syntax Trees (ASTs) to map out dependency networks, resolve local imports, and run PageRank algorithms to identify the architectural pillars of your project.
 
 ## Features
 
-- **Multi-language support**: JavaScript, TypeScript, Python, Java, and Markdown
-- **Smart scanning**: Respects `.gitignore` rules and common build directories
-- **Dependency analysis**: Builds a graph of imports and references
-- **Multiple outputs**: Terminal summaries, JSON export, and interactive HTML visualization
+* **Multi-Lingual AST Parsing:** Uses `tree-sitter` to deeply understand JavaScript, TypeScript, Python, Java, and Markdown.
+* **Intelligent Path Resolution:** Automatically resolves complex, extensionless local imports into absolute file paths.
+* **PageRank Centrality:** Calculates inbound and outbound connection graphs to identify the most heavily relied-upon "Hub" files in your repository.
+* **Entry-Point Detection:** Uses language-specific heuristics (e.g., `__name__ == "__main__"`, `public static void main`, React imports) to flag critical entry points.
+* **JSON Export:** Dump your entire repository graph to disk for external visualization or CI/CD integrations.
+* **Safe Scanning:** Automatically respects `.gitignore` and safely skips `node_modules` and `.git` directories.
+
+---
 
 ## Installation
 
+You can run Repolens on-demand using `npx`, or install it globally to use it as a daily driver.
+
+**Global Installation (Recommended):**
 ```bash
-npm install
-npm run build
-```
-
-## Usage
-
-```bash
-# Scan current directory
-repolens
-
-# Scan specific directory
-repolens ./path/to/repo
-
-# With verbose output
-repolens --verbose
-
-# Output formats
-repolens --format json --output graph.json
-repolens --format html --output graph.html
-```
-
-## Supported Languages
-
-- JavaScript/JSX (.js, .jsx)
-- TypeScript/TSX (.ts, .tsx)
-- Python (.py)
-- Java (.java)
-- Markdown (.md)
+npm install -g @anirudw/repolens
