@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/cli/index.ts --format esm --clean --banner.js \"#!/usr/bin/env node\"",
+    "build": "tsup",
     "dev": "tsx src/cli/index.ts",
     "test": "vitest",
     "lint": "tsc --noEmit"
