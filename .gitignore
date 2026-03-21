@@ -3,3 +3,4 @@ dist/
 bin/repo-graph
 *.log
 .DS_Store
+tests/

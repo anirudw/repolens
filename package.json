@@ -12,15 +12,26 @@
     "test": "vitest",
     "lint": "tsc --noEmit"
   },
-  "keywords": ["repository", "graph", "dependencies", "cli"],
+  "keywords": [
+    "repository",
+    "graph",
+    "dependencies",
+    "cli"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "commander": "^12.1.0",
     "ignore": "^5.3.1",
-    "picocolors": "^1.0.1"
+    "picocolors": "^1.0.1",
+    "remark": "^15.0.1",
+    "remark-parse": "^11.0.0",
+    "tree-sitter": "^0.25.0",
+    "tree-sitter-javascript": "^0.25.0",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
+    "@types/mdast": "^4.0.4",
     "@types/node": "^20.11.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
