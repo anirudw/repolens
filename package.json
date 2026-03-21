@@ -1,5 +1,5 @@
 {
-  "name": "repolens",
+  "name": "@anirudw/repolens",
   "version": "0.1.0",
   "description": "A CLI tool to visualize repository dependency graphs",
   "type": "module",
