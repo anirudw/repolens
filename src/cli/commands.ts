@@ -1,5 +1,10 @@
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
 import { scanDirectory } from "../scanner/index.js";
+import { createParser } from "../parser/index.js";
+import { Graph, analyzeGraph } from "../graph/index.js";
+import type { ParsedFile } from "../parser/types.js";
+import type { ScanResult } from "../scanner/walker.js";
 import { pc } from "../utils/colors.js";
 
 export function createCommand(): Command {
@@ -18,10 +23,45 @@ export function createCommand(): Command {
     )
     .option("-o, --output <file>", "Output file path")
     .action(async (path, options) => {
-      const result = scanDirectory({ rootDir: path, verbose: options.verbose });
+      const scanResult = scanDirectory({ rootDir: path, verbose: options.verbose });
+
+      if (options.verbose) {
+        console.log(pc.dim("\nParsing files..."));
+      }
+
+      const parsedFiles: ParsedFile[] = [];
+      for (const file of scanResult.files) {
+        const parser = createParser(file.absolutePath);
+        if (parser) {
+          try {
+            const content = readFileSync(file.absolutePath, "utf-8");
+            const parsed = await parser.parse(file.absolutePath, content);
+            parsedFiles.push(parsed);
+          } catch (err) {
+            if (options.verbose) {
+              console.warn(`Warning: Failed to parse ${file.relativePath}: ${err}`);
+            }
+          }
+        }
+      }
+
+      const graph = new Graph(parsedFiles);
+      const rankedNodes = analyzeGraph(graph);
 
       if (options.format === "json") {
-        const output = JSON.stringify(result, null, 2);
+        const output = JSON.stringify(
+          {
+            scan: scanResult,
+            parsed: parsedFiles,
+            graph: {
+              nodes: graph.getNodes(),
+              edges: graph.getEdges(),
+            },
+            rankedNodes,
+          },
+          null,
+          2
+        );
         if (options.output) {
           const { writeFileSync } = await import("node:fs");
           writeFileSync(options.output, output);
@@ -30,7 +70,7 @@ export function createCommand(): Command {
           console.log(output);
         }
       } else {
-        printSummary(result, options.verbose);
+        printSummary(scanResult, rankedNodes, options.verbose);
       }
     });
 
@@ -38,10 +78,11 @@ export function createCommand(): Command {
 }
 
 function printSummary(
-  result: ReturnType<typeof scanDirectory>,
+  result: ScanResult,
+  rankedNodes: ReturnType<typeof analyzeGraph>,
   verbose: boolean
 ): void {
-  console.log(pc.bold("\n📊 Repository Scan Summary\n"));
+  console.log(pc.bold("\nRepository Scan Summary\n"));
   console.log(`Total files found: ${pc.cyan(result.totalFiles.toString())}`);
   console.log(`Files ignored: ${result.ignoredCount}\n`);
 
@@ -61,8 +102,19 @@ function printSummary(
     }
   }
 
+  const topHubs = rankedNodes.filter((n) => n.inboundEdges > 0).slice(0, 3);
+  if (topHubs.length > 0) {
+    console.log(pc.bold("\nTop Hubs (Most Connected):"));
+    for (const hub of topHubs) {
+      const badge = hub.metadata?.heuristics?.isReact ? " [React]" : "";
+      console.log(
+        `  ${pc.cyan(hub.relativePath)}${badge}: ${pc.bold(hub.inboundEdges.toString())} inbound`
+      );
+    }
+  }
+
   if (verbose && result.files.length > 0) {
-    console.log(pc.bold("\n📄 Scanned files:"));
+    console.log(pc.bold("\nScanned files:"));
     for (const file of result.files.slice(0, 50)) {
       console.log(`  ${pc.dim(file.relativePath)}`);
     }
