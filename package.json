@@ -4,10 +4,13 @@
   "description": "A CLI tool to visualize repository dependency graphs",
   "type": "module",
   "bin": {
-    "repolens": "./bin/repolens.js"
+    "repolens": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup src/cli/index.ts --format esm --clean --banner.js \"#!/usr/bin/env node\"",
     "dev": "tsx src/cli/index.ts",
     "test": "vitest",
     "lint": "tsc --noEmit"
@@ -35,6 +38,7 @@
   "devDependencies": {
     "@types/mdast": "^4.0.4",
     "@types/node": "^20.11.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^1.2.0"
