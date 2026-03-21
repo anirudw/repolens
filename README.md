@@ -1,4 +1,4 @@
-# Repolens
+# repolens
 
 ![NPM Version](https://img.shields.io/npm/v/@anirudw/repolens?color=blue&style=for-the-badge)
 ![NPM Downloads](https://img.shields.io/npm/dt/@anirudw/repolens?style=for-the-badge)
