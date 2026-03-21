@@ -1,10 +1,10 @@
 {
-  "name": "repo-graph",
+  "name": "repolens",
   "version": "0.1.0",
   "description": "A CLI tool to visualize repository dependency graphs",
   "type": "module",
   "bin": {
-    "repo-graph": "./bin/repo-graph.js"
+    "repolens": "./bin/repolens.js"
   },
   "scripts": {
     "build": "tsc",

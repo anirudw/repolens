@@ -1,6 +1,6 @@
 node_modules/
 dist/
-bin/repo-graph
+bin/repolens
 *.log
 .DS_Store
-tests/
+repolens-graph.json

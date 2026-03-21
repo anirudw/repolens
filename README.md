@@ -1,4 +1,4 @@
-# repo-graph
+# repolens
 
 A CLI tool to visualize repository dependency graphs by parsing ASTs across multiple languages.
 
@@ -20,17 +20,17 @@ npm run build
 
 ```bash
 # Scan current directory
-repo-graph
+repolens
 
 # Scan specific directory
-repo-graph ./path/to/repo
+repolens ./path/to/repo
 
 # With verbose output
-repo-graph --verbose
+repolens --verbose
 
 # Output formats
-repo-graph --format json --output graph.json
-repo-graph --format html --output graph.html
+repolens --format json --output graph.json
+repolens --format html --output graph.html
 ```
 
 ## Supported Languages

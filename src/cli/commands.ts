@@ -1,8 +1,10 @@
 import { Command } from "commander";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { scanDirectory } from "../scanner/index.js";
 import { createParser } from "../parser/index.js";
 import { Graph, analyzeGraph } from "../graph/index.js";
+import { exportGraphToJson } from "../renderers/json/exporter.js";
 import type { ParsedFile } from "../parser/types.js";
 import type { ScanResult } from "../scanner/walker.js";
 import { pc } from "../utils/colors.js";
@@ -11,7 +13,7 @@ export function createCommand(): Command {
   const program = new Command();
 
   program
-    .name("repo-graph")
+    .name("repolens")
     .description("Visualize repository dependency graphs")
     .version("0.1.0")
     .argument("[path]", "Directory to scan", process.cwd())
@@ -49,26 +51,9 @@ export function createCommand(): Command {
       const rankedNodes = analyzeGraph(graph);
 
       if (options.format === "json") {
-        const output = JSON.stringify(
-          {
-            scan: scanResult,
-            parsed: parsedFiles,
-            graph: {
-              nodes: graph.getNodes(),
-              edges: graph.getEdges(),
-            },
-            rankedNodes,
-          },
-          null,
-          2
-        );
-        if (options.output) {
-          const { writeFileSync } = await import("node:fs");
-          writeFileSync(options.output, output);
-          console.log(`Written to ${options.output}`);
-        } else {
-          console.log(output);
-        }
+        const outputPath = options.output ?? resolve(process.cwd(), "repolens-graph.json");
+        await exportGraphToJson(graph, parsedFiles, outputPath);
+        console.log(`Graph exported to ${outputPath}`);
       } else {
         printSummary(scanResult, rankedNodes, options.verbose);
       }
