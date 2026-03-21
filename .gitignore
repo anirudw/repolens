@@ -1,0 +1,5 @@
+node_modules/
+dist/
+bin/repo-graph
+*.log
+.DS_Store
