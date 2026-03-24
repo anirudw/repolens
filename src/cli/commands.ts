@@ -55,7 +55,6 @@ export function createCommand(): Command {
 
       if (options.health) {
         const nodes = Array.from(graph.getNodes().values());
-        console.log("Total nodes:", nodes.length);
 
         const topCoreDeps = nodes
           .sort((a, b) => b.ca - a.ca)
@@ -67,22 +66,22 @@ export function createCommand(): Command {
           .slice(0, 5)
           .filter(n => n.instability > 0);
 
-        console.log("\n=== Architectural Health Metrics ===\n");
-        console.log("Core deps count:", topCoreDeps.length);
-        console.log("Unstable count:", topUnstable.length);
+        console.log(pc.bold("\n=== Architectural Health Metrics ===\n"));
 
         if (topCoreDeps.length > 0) {
-          console.log("\nTop 5 Core Dependencies:");
+          console.log(pc.bold("Top 5 Core Dependencies (Highest Ca - will break most things if changed):"));
           for (const node of topCoreDeps) {
-            console.log(`  ${node.relativePath}: ${node.ca} dependents`);
+            console.log(`  ${pc.red(node.relativePath)}: ${pc.bold(node.ca.toString())} dependents`);
           }
+          console.log();
         }
 
         if (topUnstable.length > 0) {
-          console.log("\nTop 5 Unstable Files:");
+          console.log(pc.bold("Top 5 Most Unstable Files (Highest I = Ce/(Ca+Ce)):"));
           for (const node of topUnstable) {
-            console.log(`  ${node.relativePath}: ${node.instability.toFixed(3)} instability`);
+            console.log(`  ${pc.yellow(node.relativePath)}: ${pc.bold(node.instability.toFixed(3))} instability`);
           }
+          console.log();
         }
 
         process.exit(0);
