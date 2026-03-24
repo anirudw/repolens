@@ -7,15 +7,18 @@ type TreeSitterParser = {
 
 let TreeSitterParser: new () => TreeSitterParser;
 let JavaScript: unknown;
+let TypeScript: unknown;
 
 async function ensureLoaded(): Promise<void> {
   if (!TreeSitterParser) {
-    const [ts, js] = await Promise.all([
+    const [ts, js, tst] = await Promise.all([
       import("tree-sitter"),
       import("tree-sitter-javascript"),
+      import("tree-sitter-typescript"),
     ]);
     TreeSitterParser = ts.default as new () => TreeSitterParser;
     JavaScript = js.default;
+    TypeScript = tst.default.typescript;
   }
 }
 
@@ -29,26 +32,42 @@ type TreeNode = {
 };
 
 export class JavaScriptParser implements ParserStrategy {
-  private parser: TreeSitterParser | null = null;
+  private jsParser: TreeSitterParser | null = null;
+  private tsParser: TreeSitterParser | null = null;
 
-  private async ensureParser(): Promise<TreeSitterParser> {
-    if (!this.parser) {
-      await ensureLoaded();
-      this.parser = new TreeSitterParser();
-      this.parser.setLanguage(JavaScript);
+  private async ensureParser(filePath: string): Promise<TreeSitterParser> {
+    await ensureLoaded();
+    const isTsFile = filePath.endsWith(".ts") || filePath.endsWith(".tsx");
+    
+    if (isTsFile) {
+      if (!this.tsParser) {
+        this.tsParser = new TreeSitterParser();
+        this.tsParser.setLanguage(TypeScript);
+      }
+      return this.tsParser;
+    } else {
+      if (!this.jsParser) {
+        this.jsParser = new TreeSitterParser();
+        this.jsParser.setLanguage(JavaScript);
+      }
+      return this.jsParser;
     }
-    return this.parser;
   }
 
   async parse(filePath: string, content: string): Promise<ParsedFile> {
-    const parser = await this.ensureParser();
+    const parser = await this.ensureParser(filePath);
     const tree = parser.parse(content);
     const rootNode = tree.rootNode as TreeNode;
     const dependencies: ExtractedDependency[] = [];
     const imports: Set<string> = new Set();
     const sourceModules: string[] = [];
+    const definedClasses: string[] = [];
+    const definedInterfaces: string[] = [];
+    const implementsInterfaces: string[] = [];
 
     this.extractImports(rootNode, dependencies, imports, sourceModules);
+    this.extractClassData(rootNode, definedClasses, implementsInterfaces);
+    this.extractInterfaceData(rootNode, definedInterfaces);
 
     const heuristics: Record<string, boolean> = {};
     const allImports = [...imports, ...sourceModules].map((s) => s.toLowerCase());
@@ -66,6 +85,9 @@ export class JavaScriptParser implements ParserStrategy {
       metadata: {
         sizeBytes: Buffer.byteLength(content, "utf-8"),
         heuristics,
+        definedClasses,
+        definedInterfaces,
+        implementsInterfaces,
       },
     };
   }
@@ -85,6 +107,57 @@ export class JavaScriptParser implements ParserStrategy {
     for (const child of node.children) {
       this.extractImports(child, dependencies, imports, sourceModules);
     }
+  }
+
+  private extractClassData(
+    node: TreeNode,
+    definedClasses: string[],
+    implementsInterfaces: string[]
+  ): void {
+    if (node.type === "class_declaration") {
+      const nameNode = node.childForFieldName("name") || this.getChildByType(node, "type_identifier");
+      if (nameNode) {
+        definedClasses.push(nameNode.text);
+      }
+      const classHeritage = node.childForFieldName("heritage") || this.getChildByType(node, "class_heritage");
+      if (classHeritage) {
+        const implementsClause = classHeritage.childForFieldName("interfaces") || this.getChildByType(classHeritage, "implements_clause");
+        if (implementsClause) {
+          for (const child of implementsClause.children) {
+            if (child.type === "type_identifier" || child.type === "identifier") {
+              implementsInterfaces.push(child.text);
+            }
+          }
+        }
+      }
+    }
+
+    for (const child of node.children) {
+      this.extractClassData(child, definedClasses, implementsInterfaces);
+    }
+  }
+
+  private extractInterfaceData(
+    node: TreeNode,
+    definedInterfaces: string[]
+  ): void {
+    if (node.type === "interface_declaration") {
+      const nameNode = node.childForFieldName("name") || this.getChildByType(node, "type_identifier");
+      if (nameNode) {
+        definedInterfaces.push(nameNode.text);
+      }
+    }
+
+    for (const child of node.children) {
+      this.extractInterfaceData(child, definedInterfaces);
+    }
+  }
+
+  private getChildByType(node: TreeNode, type: string): TreeNode | null {
+    for (const child of node.children) {
+      if (child.type === type) return child;
+    }
+    return null;
   }
 
   private extractImportStatement(

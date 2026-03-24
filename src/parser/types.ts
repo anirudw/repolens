@@ -10,7 +10,13 @@ export interface ParsedFile {
   relativePath: string;
   language: string;
   dependencies: ExtractedDependency[];
-  metadata: { sizeBytes: number; heuristics: Record<string, boolean> };
+  metadata: {
+    sizeBytes: number;
+    heuristics: Record<string, boolean>;
+    definedClasses?: string[];
+    definedInterfaces?: string[];
+    implementsInterfaces?: string[];
+  };
 }
 
 export interface ParserStrategy {

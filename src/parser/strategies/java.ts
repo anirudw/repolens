@@ -46,8 +46,13 @@ export class JavaParser implements ParserStrategy {
     const rootNode = tree.rootNode as TreeNode;
     const dependencies: ExtractedDependency[] = [];
     const heuristics: Record<string, boolean> = {};
+    const definedClasses: string[] = [];
+    const definedInterfaces: string[] = [];
+    const implementsInterfaces: string[] = [];
 
     this.extractImports(rootNode, dependencies);
+    this.extractClassData(rootNode, definedClasses, implementsInterfaces);
+    this.extractInterfaceData(rootNode, definedInterfaces);
     heuristics.hasMainMethod = this.detectMainMethod(rootNode);
 
     return {
@@ -58,6 +63,9 @@ export class JavaParser implements ParserStrategy {
       metadata: {
         sizeBytes: Buffer.byteLength(content, "utf-8"),
         heuristics,
+        definedClasses,
+        definedInterfaces,
+        implementsInterfaces,
       },
     };
   }
@@ -80,6 +88,52 @@ export class JavaParser implements ParserStrategy {
 
     for (const child of node.children) {
       this.extractImports(child, dependencies);
+    }
+  }
+
+  private extractClassData(
+    node: TreeNode,
+    definedClasses: string[],
+    implementsInterfaces: string[]
+  ): void {
+    if (node.type === "class_declaration") {
+      const nameNode = this.getChildByType(node, "identifier");
+      if (nameNode) {
+        definedClasses.push(nameNode.text);
+      }
+      const interfaces = node.childForFieldName("interfaces");
+      if (interfaces) {
+        const typeList = this.getChildByType(interfaces, "type_list");
+        if (typeList) {
+          for (const child of typeList.children) {
+            if (child.type === "type_identifier" || child.type === "identifier") {
+              implementsInterfaces.push(child.text);
+            } else if (child.type === "scoped_identifier") {
+              implementsInterfaces.push(this.getScopedIdentifierText(child));
+            }
+          }
+        }
+      }
+    }
+
+    for (const child of node.children) {
+      this.extractClassData(child, definedClasses, implementsInterfaces);
+    }
+  }
+
+  private extractInterfaceData(
+    node: TreeNode,
+    definedInterfaces: string[]
+  ): void {
+    if (node.type === "interface_declaration") {
+      const nameNode = this.getChildByType(node, "identifier");
+      if (nameNode) {
+        definedInterfaces.push(nameNode.text);
+      }
+    }
+
+    for (const child of node.children) {
+      this.extractInterfaceData(child, definedInterfaces);
     }
   }
 

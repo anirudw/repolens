@@ -8,6 +8,9 @@ export interface GraphNode {
   metadata: ParsedFile["metadata"];
   inboundEdges: number;
   outboundEdges: number;
+  ca: number;
+  ce: number;
+  instability: number;
 }
 
 export interface GraphEdge {
@@ -19,20 +22,50 @@ export interface GraphEdge {
 export class Graph {
   private nodes: Map<string, GraphNode> = new Map();
   private edges: GraphEdge[] = [];
+  private implementationRegistry: Map<string, string[]> = new Map();
 
   constructor(files: ParsedFile[]) {
     for (const file of files) {
-      this.nodes.set(file.id, {
-        id: file.id,
-        relativePath: file.relativePath,
-        language: file.language,
-        metadata: file.metadata,
-        inboundEdges: 0,
-        outboundEdges: 0,
-      });
+      this.addNode(file);
     }
 
     this.resolveEdges(files);
+  }
+
+  private addNode(file: ParsedFile): void {
+    this.nodes.set(file.id, {
+      id: file.id,
+      relativePath: file.relativePath,
+      language: file.language,
+      metadata: file.metadata,
+      inboundEdges: 0,
+      outboundEdges: 0,
+      ca: 0,
+      ce: 0,
+      instability: 0,
+    });
+
+    if (file.metadata.implementsInterfaces) {
+      for (const interfaceName of file.metadata.implementsInterfaces) {
+        if (!this.implementationRegistry.has(interfaceName)) {
+          this.implementationRegistry.set(interfaceName, []);
+        }
+        this.implementationRegistry.get(interfaceName)!.push(file.id);
+      }
+    }
+  }
+
+  calculateHealthMetrics(): void {
+    for (const node of this.nodes.values()) {
+      node.ca = node.inboundEdges;
+      node.ce = node.outboundEdges;
+      const denominator = node.ca + node.ce;
+      node.instability = denominator === 0 ? 0 : node.ce / denominator;
+    }
+  }
+
+  getImplementationRegistry(): Record<string, string[]> {
+    return Object.fromEntries(this.implementationRegistry);
   }
 
   private resolveEdges(files: ParsedFile[]): void {
