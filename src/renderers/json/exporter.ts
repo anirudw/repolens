@@ -19,6 +19,7 @@ export interface JsonEdge {
 export interface GraphJson {
   nodes: JsonNode[];
   edges: JsonEdge[];
+  implementations: Record<string, string[]>;
 }
 
 export async function exportGraphToJson(
@@ -51,6 +52,8 @@ export async function exportGraphToJson(
     type: edge.type,
   }));
 
-  const output: GraphJson = { nodes, edges };
+  const implementations = graph.getImplementationRegistry();
+
+  const output: GraphJson = { nodes, edges, implementations };
   await writeFile(outputPath, JSON.stringify(output, null, 2));
 }

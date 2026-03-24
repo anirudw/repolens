@@ -1,28 +1,66 @@
 # Repolens
 
-![NPM Version](https://img.shields.io/npm/v/@anirudw/repolens?color=blue&style=for-the-badge)
-![NPM Downloads](https://img.shields.io/npm/dt/@anirudw/repolens?style=for-the-badge)
-![License](https://img.shields.io/npm/l/@anirudw/repolens?style=for-the-badge)
-
 **A cross-platform, multi-lingual repository intelligence CLI.**
 
-Repolens analyzes your codebase using native C++ Abstract Syntax Trees (ASTs) to map out dependency networks, resolve local imports, and run PageRank algorithms to identify the architectural pillars of your project.
+Repolens analyzes your codebase using tree-sitter ASTs to map dependency networks, identify architectural pillars, and calculate coupling metrics.
+
+[![NPM Version](https://img.shields.io/npm/v/@anirudw/repolens)](https://www.npmjs.com/package/@anirudw/repolens)
+[![License](https://img.shields.io/npm/l/@anirudw/repolens)](LICENSE)
+
+## Install
+
+```bash
+npm install -g @anirudw/repolens
+```
+
+## Quick Start
+
+```bash
+# Analyze a repository
+repolens ./my-project
+
+# Export dependency graph
+repolens ./my-project --format json --output graph.json
+
+# Find implementations of an interface
+repolens ./my-project --implements ILogger
+
+# View architectural health metrics
+repolens ./my-project --health
+```
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `-v, --verbose` | Enable verbose output |
+| `-f, --format` | Output format: `text` (default) or `json` |
+| `-o, --output <file>` | Output file path |
+| `-i, --implements <name>` | Find files implementing an interface |
+| `--health` | Display architectural health metrics |
 
 ## Features
 
-* **Multi-Lingual AST Parsing:** Uses `tree-sitter` to deeply understand JavaScript, TypeScript, Python, Java, and Markdown.
-* **Intelligent Path Resolution:** Automatically resolves complex, extensionless local imports into absolute file paths.
-* **PageRank Centrality:** Calculates inbound and outbound connection graphs to identify the most heavily relied-upon "Hub" files in your repository.
-* **Entry-Point Detection:** Uses language-specific heuristics (e.g., `__name__ == "__main__"`, `public static void main`, React imports) to flag critical entry points.
-* **JSON Export:** Dump your entire repository graph to disk for external visualization or CI/CD integrations.
-* **Safe Scanning:** Automatically respects `.gitignore` and safely skips `node_modules` and `.git` directories.
+- **Multi-lingual AST parsing** — JavaScript, TypeScript, Python, Java, Markdown
+- **Path resolution** — Automatically resolves local imports
+- **PageRank centrality** — Identifies the most relied-upon files
+- **Entry-point detection** — Flags critical entry points
+- **Interface registry** — Track class/interface relationships
+- **Health metrics** — Coupling (Ca, Ce) and instability (I)
 
----
+## Health Metrics
 
-## Installation
+The `--health` flag calculates coupling metrics:
 
-You can run Repolens on-demand using `npx`, or install it globally to use it as a daily driver.
+- **Ca (Afferent Coupling)** — Files that depend on this file
+- **Ce (Efferent Coupling)** — Files this file depends on
+- **Instability** — `I = Ce / (Ca + Ce)`
 
-**Global Installation (Recommended):**
-```bash
-npm install -g @anirudw/repolens
+| Value | Meaning |
+|-------|---------|
+| ~0 | Stable core dependency |
+| ~1 | Highly unstable (fragile) |
+
+## License
+
+MIT
