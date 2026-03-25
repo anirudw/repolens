@@ -8,7 +8,8 @@ export default defineConfig({
     'tree-sitter',
     'tree-sitter-javascript',
     'tree-sitter-python',
-    'tree-sitter-java'
+    'tree-sitter-java',
+    'tree-sitter-typescript'
   ],
   banner: {
     js: '#!/usr/bin/env node',
