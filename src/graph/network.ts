@@ -115,6 +115,9 @@ export class Graph {
     fromDir: string,
     specifier: string
   ): string | null {
+    const ext = specifier.slice(specifier.lastIndexOf("."));
+    const withoutExt = ext.length > 1 ? specifier.slice(0, specifier.lastIndexOf(".")) : specifier;
+    
     const candidatePaths = [
       specifier,
       `${specifier}.js`,
@@ -125,6 +128,13 @@ export class Graph {
       `${specifier}/index.ts`,
       `${specifier}/index.jsx`,
       `${specifier}/index.tsx`,
+      withoutExt,
+      `${withoutExt}.js`,
+      `${withoutExt}.ts`,
+      `${withoutExt}.jsx`,
+      `${withoutExt}.tsx`,
+      `${withoutExt}/index.js`,
+      `${withoutExt}/index.ts`,
     ];
 
     for (const candidate of candidatePaths) {
