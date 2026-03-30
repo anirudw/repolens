@@ -131,21 +131,6 @@ Top 5 Most Unstable Files (Highest I = Ce/(Ca+Ce)):
 - Java: `.java`
 - Markdown: `.md`, `.markdown`
 
-## Screenshots
-
-Add terminal screenshots here when available.
-
-- `docs/screenshots/summary.png` (summary output)
-- `docs/screenshots/health.png` (architectural health output)
-- `docs/screenshots/implements.png` (implementation search)
-
-Suggested markdown once images are added:
-
-```md
-![Repository summary](docs/screenshots/summary.png)
-![Architectural health metrics](docs/screenshots/health.png)
-![Implementation lookup](docs/screenshots/implements.png)
-```
 
 ## Development
 
