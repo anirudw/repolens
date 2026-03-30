@@ -95,54 +95,17 @@ repolens [path] [options]
 
 ### Summary mode (`repolens`)
 
-```text
-Repository Scan Summary
-Repository composition and dependency centrality.
---------------------------------------------------------------
+<img width="842" height="576" alt="s1" src="https://github.com/user-attachments/assets/5d4f7ec6-91e7-44ca-bc89-f6e210f70711" />
 
-Total files found | 182
-Files ignored     | 47
-
-Files by Language
-Detected source files by parser strategy.
-	javascript   | 42
-	typescript   | 88
-	python       | 16
-
-Top Hubs
-Ranked by inbound dependencies.
-	01 src/core/router.ts | 19 inbound
-	02 src/core/config.ts | 14 inbound
-```
 
 ### Health mode (`repolens --health`)
 
-```text
-Architectural Health Metrics
-Dependency pressure and instability hotspots.
---------------------------------------------------------------
+<img width="953" height="474" alt="s2" src="https://github.com/user-attachments/assets/d95e5b33-fd0b-4fa0-82d6-ca3cf69da32a" />
 
-Top Core Dependencies
-Highest Ca (afferent coupling): changes here can impact the most files
-	01 src/core/config.ts       | 14 dependents
-
-Most Unstable Files
-Highest I = Ce / (Ca + Ce)
-	01 src/features/experiments.ts | 1.000 instability
-```
 
 ### Implementation Search (`repolens --implements <name>`)
 
-```text
-Implementation Search
-Interface/Base: ILogger
---------------------------------------------------------------
-
-Found 2 implementation(s)
-Files implementing the requested contract
-	01 src/loggers/console-logger.ts
-	02 src/loggers/file-logger.ts
-```
+<img width="1110" height="604" alt="s3" src="https://github.com/user-attachments/assets/58746a57-ee89-41a1-936b-3fdd34a3a353" />
 
 ## Supported Languages
 
