@@ -1,4 +1,4 @@
-# repolens
+# Repolens
 
 [![NPM Version](https://img.shields.io/npm/v/@anirudw/repolens?style=for-the-badge)](https://www.npmjs.com/package/@anirudw/repolens)
 [![NPM Downloads](https://img.shields.io/npm/dt/@anirudw/repolens?style=for-the-badge)](https://www.npmjs.com/package/@anirudw/repolens)
@@ -97,30 +97,51 @@ repolens [path] [options]
 
 ```text
 Repository Scan Summary
+Repository composition and dependency centrality.
+--------------------------------------------------------------
 
-Total files found: 182
-Files ignored: 47
+Total files found | 182
+Files ignored     | 47
 
-Files by language:
-	• javascript: 42
-	• typescript: 88
-	• python: 16
+Files by Language
+Detected source files by parser strategy.
+	javascript   | 42
+	typescript   | 88
+	python       | 16
 
-Top Hubs (Most Connected):
-	src/core/router.ts: 19 inbound
-	src/core/config.ts: 14 inbound
+Top Hubs
+Ranked by inbound dependencies.
+	01 src/core/router.ts | 19 inbound
+	02 src/core/config.ts | 14 inbound
 ```
 
 ### Health mode (`repolens --health`)
 
 ```text
-=== Architectural Health Metrics ===
+Architectural Health Metrics
+Dependency pressure and instability hotspots.
+--------------------------------------------------------------
 
-Top 5 Core Dependencies (Highest Ca - will break most things if changed):
-	src/core/config.ts: 14 dependents
+Top Core Dependencies
+Highest Ca (afferent coupling): changes here can impact the most files
+	01 src/core/config.ts       | 14 dependents
 
-Top 5 Most Unstable Files (Highest I = Ce/(Ca+Ce)):
-	src/features/experiments.ts: 1.000 instability
+Most Unstable Files
+Highest I = Ce / (Ca + Ce)
+	01 src/features/experiments.ts | 1.000 instability
+```
+
+### Implementation Search (`repolens --implements <name>`)
+
+```text
+Implementation Search
+Interface/Base: ILogger
+--------------------------------------------------------------
+
+Found 2 implementation(s)
+Files implementing the requested contract
+	01 src/loggers/console-logger.ts
+	02 src/loggers/file-logger.ts
 ```
 
 ## Supported Languages
@@ -178,6 +199,8 @@ npm install -g @anirudw/repolens@latest
 ```bash
 repolens /path/to/repo --verbose
 ```
+
+- Use `--health` or `--implements` when you want focused output (they exit early by design and do not print summary mode).
 
 ## License
 
