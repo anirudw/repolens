@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { scanDirectory } from "../scanner/index.js";
 import { createParser } from "../parser/index.js";
 import { Graph, analyzeGraph } from "../graph/index.js";
@@ -27,6 +27,7 @@ export function createCommand(): Command {
     .option("-i, --implements <interfaceName>", "Find all files implementing a specific interface or base class")
     .option("--health", "Display architectural health metrics and identify unstable files")
     .action(async (path, options) => {
+      const scanRoot = resolve(path);
       const scanResult = scanDirectory({ rootDir: path, verbose: options.verbose });
 
       if (options.verbose) {
@@ -66,22 +67,24 @@ export function createCommand(): Command {
           .slice(0, 5)
           .filter(n => n.instability > 0);
 
-        console.log(pc.bold("\n=== Architectural Health Metrics ===\n"));
+        printHealthHeader();
 
         if (topCoreDeps.length > 0) {
-          console.log(pc.bold("Top 5 Core Dependencies (Highest Ca - will break most things if changed):"));
-          for (const node of topCoreDeps) {
-            console.log(`  ${pc.red(node.relativePath)}: ${pc.bold(node.ca.toString())} dependents`);
-          }
-          console.log();
+          printHealthSection(
+            "Top Core Dependencies",
+            "Highest Ca (afferent coupling): changes here can impact the most files",
+            topCoreDeps.map((node) => ({ path: node.relativePath, value: node.ca.toString(), unit: "dependents" })),
+            pc.red
+          );
         }
 
         if (topUnstable.length > 0) {
-          console.log(pc.bold("Top 5 Most Unstable Files (Highest I = Ce/(Ca+Ce)):"));
-          for (const node of topUnstable) {
-            console.log(`  ${pc.yellow(node.relativePath)}: ${pc.bold(node.instability.toFixed(3))} instability`);
-          }
-          console.log();
+          printHealthSection(
+            "Most Unstable Files",
+            "Highest I = Ce / (Ca + Ce)",
+            topUnstable.map((node) => ({ path: node.relativePath, value: node.instability.toFixed(3), unit: "instability" })),
+            pc.yellow
+          );
         }
 
         process.exit(0);
@@ -90,16 +93,28 @@ export function createCommand(): Command {
       if (options.implements) {
         const registry = graph.getImplementationRegistry();
         const implementations = registry[options.implements] || [];
-
-        console.log(pc.bold(`\nSearching for implementations of: ${pc.cyan(options.implements)}`));
-
-        if (implementations.length === 0) {
-          console.log(pc.yellow(`\nNo implementations found for ${options.implements} in this repository.`));
-        } else {
-          console.log(pc.green(`\nFound ${implementations.length} implementation(s):`));
-          for (const file of implementations) {
-            console.log(`  ${pc.dim(file)}`);
+        const displayPaths = implementations.map((filePath) => {
+          const relToScanRoot = relative(scanRoot, filePath);
+          if (relToScanRoot && !relToScanRoot.startsWith("..")) {
+            return relToScanRoot;
           }
+
+          const relToCwd = relative(process.cwd(), filePath);
+          return relToCwd || filePath;
+        });
+
+        printImplementsHeader(options.implements);
+
+        if (displayPaths.length === 0) {
+          console.log(pc.yellow("No implementations found in this repository."));
+          console.log();
+        } else {
+          printListSection(
+            `Found ${displayPaths.length} implementation(s)`,
+            "Files implementing the requested contract",
+            displayPaths,
+            pc.cyan
+          );
         }
         process.exit(0);
       }
@@ -121,11 +136,15 @@ function printSummary(
   rankedNodes: ReturnType<typeof analyzeGraph>,
   verbose: boolean
 ): void {
-  console.log(pc.bold("\nRepository Scan Summary\n"));
-  console.log(`Total files found: ${pc.cyan(result.totalFiles.toString())}`);
-  console.log(`Files ignored: ${result.ignoredCount}\n`);
+  printScanSummaryHeader();
+  printMetricRows([
+    { label: "Total files found", value: result.totalFiles.toString(), color: pc.cyan },
+    { label: "Files ignored", value: result.ignoredCount.toString() },
+  ]);
+  console.log();
 
-  console.log(pc.bold("Files by language:"));
+  console.log(pc.bold("Files by Language"));
+  console.log(pc.dim("Detected source files by parser strategy."));
   const langColors: Record<string, (s: string) => string> = {
     javascript: pc.yellow,
     typescript: pc.blue,
@@ -137,30 +156,129 @@ function printSummary(
   for (const [lang, count] of Object.entries(result.filesByLanguage)) {
     if (count > 0) {
       const color = langColors[lang] ?? pc.white;
-      console.log(`  ${color(`• ${lang}`)}: ${pc.bold(count.toString())}`);
+      console.log(`  ${color(lang.padEnd(12))} ${pc.dim("|")} ${pc.bold(count.toString())}`);
     }
   }
+  console.log();
 
   const topHubs = rankedNodes.filter((n) => n.inboundEdges > 0).slice(0, 3);
   if (topHubs.length > 0) {
-    console.log(pc.bold("\nTop Hubs (Most Connected):"));
-    for (const hub of topHubs) {
-      const badge = hub.metadata?.heuristics?.isReact ? " [React]" : "";
-      console.log(
-        `  ${pc.cyan(hub.relativePath)}${badge}: ${pc.bold(hub.inboundEdges.toString())} inbound`
-      );
-    }
+    printListSection(
+      "Top Hubs",
+      "Ranked by inbound dependencies.",
+      topHubs.map((hub) => {
+        const badge = hub.metadata?.heuristics?.isReact ? " [React]" : "";
+        return `${hub.relativePath}${badge} ${pc.dim("|")} ${hub.inboundEdges} inbound`;
+      }),
+      pc.cyan
+    );
   }
 
   if (verbose && result.files.length > 0) {
-    console.log(pc.bold("\nScanned files:"));
-    for (const file of result.files.slice(0, 50)) {
-      console.log(`  ${pc.dim(file.relativePath)}`);
-    }
+    printListSection(
+      "Scanned Files",
+      "First 50 scanned files (verbose mode).",
+      result.files.slice(0, 50).map((file) => file.relativePath),
+      pc.dim
+    );
     if (result.files.length > 50) {
       console.log(`  ${pc.dim(`... and ${result.files.length - 50} more`)}`);
+      console.log();
     }
   }
 
   console.log();
+}
+
+type HealthDisplayRow = {
+  path: string;
+  value: string;
+  unit: string;
+};
+
+function printHealthHeader(): void {
+  console.log();
+  console.log(pc.bold("Architectural Health Metrics"));
+  // console.log(pc.dim("Dependency pressure and instability hotspots."));
+  // console.log(pc.dim("-".repeat(62)));
+  console.log();
+}
+
+function printScanSummaryHeader(): void {
+  console.log();
+  console.log(pc.bold("Repository Scan Summary"));
+  console.log(pc.dim("Repository composition and dependency centrality."));
+  console.log(pc.dim("-".repeat(62)));
+  console.log();
+}
+
+function printImplementsHeader(interfaceName: string): void {
+  console.log();
+  console.log(pc.bold("Implementation Search"));
+  console.log(`${pc.dim("Interface/Base")}: ${pc.cyan(interfaceName)}`);
+  console.log(pc.dim("-".repeat(62)));
+  console.log();
+}
+
+function printMetricRows(
+  rows: Array<{ label: string; value: string; color?: (value: string) => string }>
+): void {
+  const labelWidth = Math.max(...rows.map((row) => row.label.length));
+  for (const row of rows) {
+    const value = row.color ? row.color(row.value) : pc.bold(row.value);
+    console.log(`${pc.dim(row.label.padEnd(labelWidth))} ${pc.dim("|")} ${value}`);
+  }
+}
+
+function printListSection(
+  title: string,
+  subtitle: string,
+  rows: string[],
+  colorizeRow: (value: string) => string
+): void {
+  console.log(pc.bold(title));
+  console.log(pc.dim(subtitle));
+  for (const [index, row] of rows.entries()) {
+    const rank = `${index + 1}`.padStart(2, "0");
+    console.log(`  ${pc.dim(rank)} ${colorizeRow(row)}`);
+  }
+  console.log();
+}
+
+function printHealthSection(
+  title: string,
+  subtitle: string,
+  rows: HealthDisplayRow[],
+  colorizePath: (value: string) => string
+): void {
+  console.log(pc.bold(title));
+  console.log(pc.dim(subtitle));
+
+  const displayRows = rows.map((row) => ({
+    ...row,
+    path: truncateMiddle(row.path, 56),
+  }));
+
+  const pathWidth = Math.max(
+    24,
+    ...displayRows.map((row) => row.path.length)
+  );
+
+  for (const [index, row] of displayRows.entries()) {
+    const rank = `${index + 1}`.padStart(2, "0");
+    console.log(
+      `  ${pc.dim(rank)} ${colorizePath(row.path.padEnd(pathWidth))} ${pc.dim("|")} ${pc.bold(row.value)} ${pc.dim(row.unit)}`
+    );
+  }
+
+  console.log();
+}
+
+function truncateMiddle(value: string, maxLen: number): string {
+  if (value.length <= maxLen) return value;
+
+  const keep = maxLen - 3;
+  const left = Math.ceil(keep / 2);
+  const right = Math.floor(keep / 2);
+  return `${value.slice(0, left)}...${value.slice(-right)}`;
 }
