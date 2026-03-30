@@ -1,6 +1,6 @@
 {
   "name": "@anirudw/repolens",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A CLI tool to visualize repository dependency graphs",
   "type": "module",
   "bin": {
@@ -33,12 +33,12 @@
     "tree-sitter-java": "^0.21.0",
     "tree-sitter-javascript": "^0.21.2",
     "tree-sitter-python": "^0.21.0",
+    "tree-sitter-typescript": "^0.23.2",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@types/mdast": "^4.0.4",
     "@types/node": "^20.11.0",
-    "tree-sitter-typescript": "^0.23.2",
     "tsup": "^8.5.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
