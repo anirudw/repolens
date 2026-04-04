@@ -3,6 +3,7 @@ import ignore, { Ignore } from "ignore";
 
 export const DEFAULT_IGNORES = [
   "node_modules",
+  ".repolens-cache.json",
   "bower_components",
   "dist",
   "build",

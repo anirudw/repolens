@@ -1,6 +1,6 @@
 {
   "name": "@anirudw/repolens",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "A CLI tool to visualize repository dependency graphs",
   "type": "module",
   "bin": {
@@ -12,7 +12,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsx src/cli/index.ts",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "tsc --noEmit"
   },
   "keywords": [

@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { readFileSync } from "node:fs";
+import fs from "node:fs";
 import { relative, resolve } from "node:path";
 import { scanDirectory } from "../scanner/index.js";
 import { createParser } from "../parser/index.js";
@@ -8,6 +8,7 @@ import { exportGraphToJson } from "../renderers/json/exporter.js";
 import type { ParsedFile } from "../parser/types.js";
 import type { ScanResult } from "../scanner/walker.js";
 import { pc } from "../utils/colors.js";
+import { CacheManager } from "../cache/CacheManager.js";
 
 export function createCommand(): Command {
   const program = new Command();
@@ -27,6 +28,7 @@ export function createCommand(): Command {
     .option("-i, --implements <interfaceName>", "Find all files implementing a specific interface or base class")
     .option("--health", "Display architectural health metrics and identify unstable files")
     .action(async (path, options) => {
+      const runStart = Date.now();
       const scanRoot = resolve(path);
       const scanResult = scanDirectory({ rootDir: path, verbose: options.verbose });
 
@@ -34,13 +36,25 @@ export function createCommand(): Command {
         console.log(pc.dim("\nParsing files..."));
       }
 
+      const cache = new CacheManager(scanRoot);
+      cache.load();
+      cache.prune(scanResult.files.map((file) => file.absolutePath));
+
       const parsedFiles: ParsedFile[] = [];
       for (const file of scanResult.files) {
+        const mtimeMs = fs.statSync(file.absolutePath).mtimeMs;
+        const cachedParsedFile = cache.get(file.absolutePath, mtimeMs) as ParsedFile | null;
+        if (cachedParsedFile) {
+          parsedFiles.push(cachedParsedFile);
+          continue;
+        }
+
         const parser = createParser(file.absolutePath);
         if (parser) {
           try {
-            const content = readFileSync(file.absolutePath, "utf-8");
+            const content = fs.readFileSync(file.absolutePath, "utf-8");
             const parsed = await parser.parse(file.absolutePath, content);
+            cache.set(file.absolutePath, mtimeMs, parsed);
             parsedFiles.push(parsed);
           } catch (err) {
             if (options.verbose) {
@@ -49,6 +63,8 @@ export function createCommand(): Command {
           }
         }
       }
+
+      cache.save();
 
       const graph = new Graph(parsedFiles);
       const rankedNodes = analyzeGraph(graph);
@@ -87,6 +103,7 @@ export function createCommand(): Command {
           );
         }
 
+        printElapsedTime(runStart);
         process.exit(0);
       }
 
@@ -116,6 +133,7 @@ export function createCommand(): Command {
             pc.cyan
           );
         }
+        printElapsedTime(runStart);
         process.exit(0);
       }
 
@@ -126,9 +144,16 @@ export function createCommand(): Command {
       } else {
         printSummary(scanResult, rankedNodes, options.verbose);
       }
+
+      printElapsedTime(runStart);
     });
 
   return program;
+}
+
+function printElapsedTime(runStart: number): void {
+  const elapsedSeconds = (Date.now() - runStart) / 1000;
+  console.log(pc.dim(`Completed in ${elapsedSeconds.toFixed(2)}s`));
 }
 
 function printSummary(
