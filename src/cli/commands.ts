@@ -26,6 +26,7 @@ export function createCommand(): Command {
     )
     .option("-o, --output <file>", "Output file path")
     .option("-i, --implements <interfaceName>", "Find all files implementing a specific interface or base class")
+    .option("--cycles", "Detect circular dependencies and fail CI if any are found")
     .option("--health", "Display architectural health metrics and identify unstable files")
     .action(async (path, options) => {
       const runStart = Date.now();
@@ -69,6 +70,24 @@ export function createCommand(): Command {
       const graph = new Graph(parsedFiles);
       const rankedNodes = analyzeGraph(graph);
       graph.calculateHealthMetrics();
+
+      if (options.cycles) {
+        const cycles = graph.detectCycles();
+
+        if (cycles.length === 0) {
+          console.log(pc.green("No circular dependencies detected."));
+          process.exit(0);
+        }
+
+        console.log(pc.red(`Found ${cycles.length} circular dependencies.`));
+        console.log();
+
+        for (const cycle of cycles) {
+          console.log(formatCyclePath(cycle));
+        }
+
+        process.exit(1);
+      }
 
       if (options.health) {
         const nodes = Array.from(graph.getNodes().values());
@@ -154,6 +173,22 @@ export function createCommand(): Command {
 function printElapsedTime(runStart: number): void {
   const elapsedSeconds = (Date.now() - runStart) / 1000;
   console.log(pc.dim(`Completed in ${elapsedSeconds.toFixed(2)}s`));
+}
+
+function formatCyclePath(cycle: string[]): string {
+  return cycle
+    .map((nodeId, index) => {
+      const fileName = nodeId.split(/[\\/]/).pop() ?? nodeId;
+      const coloredFile = pc.cyan(fileName);
+
+      if (index === cycle.length - 1) {
+        return coloredFile;
+      }
+
+      return `${coloredFile} ${pc.yellow("->")}`;
+    })
+    .join(" ")
+    .trim();
 }
 
 function printSummary(
