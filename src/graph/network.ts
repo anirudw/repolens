@@ -64,6 +64,63 @@ export class Graph {
     }
   }
 
+  /*
+   * COPILOT PROMPT:
+   * Implement a `detectCycles()` method that returns string[][] (an array of cycles, where each cycle is an array of node IDs representing the path).
+   * 1. Create a `visited` Set<string> and a `recursionStack` Set<string>.
+   * 2. Loop through all nodes in the graph. If a node is not in `visited`, call a helper function `dfs(nodeId, currentPath)`.
+   * 3. In the `dfs` function:
+   * - Add `nodeId` to `visited`, `recursionStack`, and `currentPath` array.
+   * - Find all outgoing edges for this node (where edge.source === nodeId).
+   * - For each target of those edges:
+   * - If target is in `recursionStack`, a cycle is found! Slice `currentPath` from the index of target to the end, append target to close the loop, and push to a `cycles` array.
+   * - If target is not in `visited`, recursively call `dfs(target, currentPath)`.
+   * - After checking all edges, remove `nodeId` from `recursionStack` and pop it from `currentPath`.
+   * 4. Return the `cycles` array.
+   */
+  detectCycles(): string[][] {
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+    const cycles: string[][] = [];
+
+    const dfs = (nodeId: string, currentPath: string[]): void => {
+      visited.add(nodeId);
+      recursionStack.add(nodeId);
+      currentPath.push(nodeId);
+
+      for (const edge of this.edges) {
+        if (edge.source !== nodeId) {
+          continue;
+        }
+
+        const target = edge.target;
+
+        if (recursionStack.has(target)) {
+          const cycleStartIndex = currentPath.indexOf(target);
+          if (cycleStartIndex !== -1) {
+            cycles.push([...currentPath.slice(cycleStartIndex), target]);
+          }
+          continue;
+        }
+
+        if (!visited.has(target)) {
+          dfs(target, currentPath);
+        }
+      }
+
+      recursionStack.delete(nodeId);
+      currentPath.pop();
+    };
+
+    for (const nodeId of this.nodes.keys()) {
+      if (!visited.has(nodeId)) {
+        dfs(nodeId, []);
+      }
+    }
+
+    return cycles;
+  }
+
   getImplementationRegistry(): Record<string, string[]> {
     return Object.fromEntries(this.implementationRegistry);
   }

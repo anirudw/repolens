@@ -3,7 +3,7 @@ import { Graph } from '../src/graph/network';
 import type { ParsedFile } from '../src/parser/types';
 import { exportGraphToJson } from '../src/renderers/json/exporter';
 import { writeFileSync, unlinkSync, mkdirSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 function createFakeParsedFile(overrides: Partial<ParsedFile> = {}): ParsedFile {
   return {
@@ -112,6 +112,63 @@ describe('Graph - Implementation Registry Plumbing', () => {
     expect(typeof registry).toBe('object');
     expect(Array.isArray(registry)).toBe(false);
     expect(registry).toEqual(expect.any(Object));
+  });
+
+  it('should detect cycles in the graph', () => {
+    const baseDir = resolve('tests/fixtures/temp/cycle-graph');
+    const fakeFiles: ParsedFile[] = [
+      createFakeParsedFile({
+        id: resolve(baseDir, 'A.ts'),
+        relativePath: 'A.ts',
+        metadata: { sizeBytes: 100, heuristics: {}, definedClasses: [], definedInterfaces: [], implementsInterfaces: [] },
+        dependencies: [{ rawSpecifier: './B', type: 'import', location: { line: 1, column: 1 } } as any],
+      }),
+      createFakeParsedFile({
+        id: resolve(baseDir, 'B.ts'),
+        relativePath: 'B.ts',
+        metadata: { sizeBytes: 100, heuristics: {}, definedClasses: [], definedInterfaces: [], implementsInterfaces: [] },
+        dependencies: [{ rawSpecifier: './C', type: 'import', location: { line: 1, column: 1 } } as any],
+      }),
+      createFakeParsedFile({
+        id: resolve(baseDir, 'C.ts'),
+        relativePath: 'C.ts',
+        metadata: { sizeBytes: 100, heuristics: {}, definedClasses: [], definedInterfaces: [], implementsInterfaces: [] },
+        dependencies: [{ rawSpecifier: './A', type: 'import', location: { line: 1, column: 1 } } as any],
+      }),
+    ];
+
+    const graph = new Graph(fakeFiles);
+    const cycles = graph.detectCycles();
+
+    expect(cycles).toContainEqual([
+      resolve(baseDir, 'A.ts'),
+      resolve(baseDir, 'B.ts'),
+      resolve(baseDir, 'C.ts'),
+      resolve(baseDir, 'A.ts'),
+    ]);
+  });
+
+  it('should return no cycles for an acyclic graph', () => {
+    const baseDir = resolve('tests/fixtures/temp/acyclic-graph');
+    const fakeFiles: ParsedFile[] = [
+      createFakeParsedFile({
+        id: resolve(baseDir, 'A.ts'),
+        relativePath: 'A.ts',
+        metadata: { sizeBytes: 100, heuristics: {}, definedClasses: [], definedInterfaces: [], implementsInterfaces: [] },
+        dependencies: [{ rawSpecifier: './B', type: 'import', location: { line: 1, column: 1 } } as any],
+      }),
+      createFakeParsedFile({
+        id: resolve(baseDir, 'B.ts'),
+        relativePath: 'B.ts',
+        metadata: { sizeBytes: 100, heuristics: {}, definedClasses: [], definedInterfaces: [], implementsInterfaces: [] },
+        dependencies: [],
+      }),
+    ];
+
+    const graph = new Graph(fakeFiles);
+    const cycles = graph.detectCycles();
+
+    expect(cycles).toHaveLength(0);
   });
 });
 
