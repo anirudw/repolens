@@ -9,6 +9,7 @@ import type { ParsedFile } from "../parser/types.js";
 import type { ScanResult } from "../scanner/walker.js";
 import { pc } from "../utils/colors.js";
 import { CacheManager } from "../cache/CacheManager.js";
+import { version } from "../../package.json";
 
 export function createCommand(): Command {
   const program = new Command();
@@ -16,7 +17,7 @@ export function createCommand(): Command {
   program
     .name("repolens")
     .description("Visualize repository dependency graphs")
-    .version("0.1.0")
+    .version(version)
     .argument("[path]", "Directory to scan", process.cwd())
     .option("-v, --verbose", "Enable verbose output", false)
     .option(
