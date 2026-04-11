@@ -22,8 +22,8 @@ It is designed for fast, practical analysis in real-world codebases and currentl
 - Dependency graph construction and ranking.
 - Circular dependency detection via `--cycles` (CI-friendly exit codes).
 - Architectural health report:
-	- Top core dependencies by afferent coupling ($Ca$)
-	- Top unstable files by instability ($I = \frac{Ce}{Ca + Ce}$)
+- Top core dependencies by afferent coupling ($Ca$)
+- Top unstable files by instability ($I = \frac{Ce}{Ca + Ce}$)
 - Interface implementation lookup via `--implements`.
 - Persistent parse caching with automatic stale-entry pruning.
 - JSON export for machine-readable output.
@@ -105,17 +105,15 @@ repolens [path] [options]
 
 ## Example Output
 
-#### Outputs after I ran `repolens` on nest repository of nestjs (https://github.com/nestjs/nest.git`)
+Outputs after I ran `repolens` on nest repository of nestjs (<https://github.com/nestjs/nest.git`>)
 
 ### Summary mode (`repolens`)
 
 <img width="842" height="576" alt="s1" src="https://github.com/user-attachments/assets/5d4f7ec6-91e7-44ca-bc89-f6e210f70711" />
 
-
 ### Health mode (`repolens --health`)
 
 <img width="953" height="474" alt="s2" src="https://github.com/user-attachments/assets/d95e5b33-fd0b-4fa0-82d6-ca3cf69da32a" />
-
 
 ### Implementation Search (`repolens --implements <name>`)
 
@@ -136,7 +134,6 @@ a.ts -> b.ts -> c.ts -> a.ts
 - Python: `.py`
 - Java: `.java`
 - Markdown: `.md`, `.markdown`
-
 
 ## Development
 
