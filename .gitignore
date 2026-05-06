@@ -4,3 +4,4 @@ bin/repolens
 *.log
 .DS_Store
 repolens-graph.json
+PLAN.txt
